@@ -1,0 +1,38 @@
+# echo_server.py
+import socket
+from Crypto.Cipher import DES
+
+key = b'deadbabe'
+magic = '\xba\xbe'
+mode = DES.MODE_CBC
+
+host = ''        # Symbolic name meaning all available interfaces
+port = 12345     # Arbitrary non-privileged port
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((host, port))
+s.listen(1)
+print("The server is listening")
+conn, addr = s.accept()
+print('Connected by', addr)
+n=0
+while True:
+    data = conn.recv(1024)
+    if not data:
+        break
+    print "hexaban: " + data
+    data = data.decode("hex")
+    iv_got = data[0:8]
+    decryptor = DES.new(key, mode, IV=iv_got)
+
+    message = data[8:]
+    plain = decryptor.decrypt(message)
+    print "az uzenet: " + plain
+
+    if plain[0:2] == magic:
+        conn.sendall("MAC VARIFICATION FAILED")
+        print "jackpot"
+    else:
+        conn.sendall("MAGIC NOT RECOGNIZED")
+        print n
+        n+=1
+conn.close()
