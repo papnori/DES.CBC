@@ -1,0 +1,31 @@
+# echo_client.py
+import socket
+from Crypto.Cipher import DES
+
+host = socket.gethostname()
+port = 12345                   # The same port as used by the server
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+key = 'deadbabe'
+magic = '\xba\xbe'
+type = '0001'
+params = 'serialss'
+password = 'unicorns'
+mac = '001422001422'
+padding = '100000'
+message = magic + type + params + password + mac + padding
+
+iv = '01000010'
+mode = DES.MODE_CBC
+cipher = DES.new(key, mode, IV=iv)
+print
+print "uzenet: " + message
+
+chiper = (iv + cipher.encrypt(message)).encode("hex")
+print "hexaban: " + chiper
+
+s.connect((host, port))
+s.sendall(chiper)
+data = s.recv(1024)
+s.close()
+print('Received', repr(data))
