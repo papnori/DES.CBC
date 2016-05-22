@@ -1,0 +1,77 @@
+import socket
+from Crypto.Cipher import DES
+
+def padhexa(s):
+    return s + (8 - (len(s)%8))*'0'
+
+host = socket.gethostname()
+port = 12345                   # The same port as used by the server
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+key = '11111111'
+magic1 = 0
+magic2 = 0
+wut = 'wutMeMate'
+iv = '01000010'
+mode = DES.MODE_CBC
+cipher = DES.new(key, mode, IV=iv)
+data = 0
+stop = False
+
+s.connect((host, port))
+while magic1 <= 255 and (not stop):
+    magic2 = 0
+    while magic2 <= 255 and (not stop):
+        message = hex(magic1) + hex(magic2) + wut
+
+        msg1 = hex(int("ac", 16) ^ int("84", 16))
+        print "msg1"
+        msg1 = hex(int(msg1, 16) ^ int(magic1))
+        print msg1
+        msg2 = hex(int("4a", 16) ^ int("f5", 16))
+        msg2 = hex(int(msg2, 16) ^ int(magic2))
+        message = msg1 + msg2 + wut
+        message = padhexa(message)
+        print "message: "
+        print message
+        chiper = (iv + cipher.encrypt(message)).encode("hex")
+        print "chiper: "
+        print chiper
+        s.sendall(chiper)
+        data = s.recv(1024)
+        print repr(data)
+        if repr(data) == "'MAC VARIFICATION FAILED'":
+            print "magic1:"
+            print magic1
+            print "magic2:"
+            print magic2
+            stop = True
+        magic2 += 1
+    magic1 += 1
+
+pwd1 = hex(int(magic1) ^ int("ba", 16))
+print "resz1: " +pwd1
+pwd2 = hex(int(magic2) ^ int("be", 16))
+print "resz2: " + pwd2
+pwd1 = hex(int(pwd1, 16) ^ int("84", 16))
+pwd2 = hex(int(pwd2, 16) ^ int("f5", 16))
+print "elso: " + pwd1
+print "masodik: " + pwd2
+
+origin1 = hex(int("84", 16) ^ int("ba", 16))
+origin2 = hex(int("f5", 16) ^ int("be", 16))
+print "should have1: " + origin1
+print "should have2: " + origin2
+origin11 = (int(origin1, 16) ^ int("75", 16))
+origin22 = (int(origin2, 16) ^ int("6e", 16))
+print "R1 should have: "
+print origin11
+print "R2 should have: "
+print origin22
+origin111 = (int(origin1, 16) ^ int("55", 16))
+origin222 = (int(origin2, 16) ^ int("4e", 16))
+print "or R1 should have: "
+print origin111
+print "or R2 should have: "
+print origin222
+s.close()
