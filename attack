@@ -8,70 +8,58 @@ host = socket.gethostname()
 port = 12345                   # The same port as used by the server
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+iv = '01000010'
 key = '11111111'
+mode = DES.MODE_CBC
+
+#pwd = 'ac4aefa0fff34c6606efc0a63d071aff'
+pwd1 = '\xac'
+pwd2 = '\x4a'
+y1 = '\x72'
+y2 = '\x6a'
+#Y = '726a1751080b2bf084f549c643d191dc'
+cipher = DES.new(key, mode, IV=iv)
 magic1 = 0
 magic2 = 0
-wut = 'wutMeMate'
-iv = '01000010'
-mode = DES.MODE_CBC
-cipher = DES.new(key, mode, IV=iv)
+
 data = 0
 stop = False
-
+n = 0
 s.connect((host, port))
-while magic1 <= 255 and (not stop):
-    magic2 = 0
-    while magic2 <= 255 and (not stop):
-        message = hex(magic1) + hex(magic2) + wut
-
-        msg1 = hex(int("ac", 16) ^ int("84", 16))
-        print "msg1"
-        msg1 = hex(int(msg1, 16) ^ int(magic1))
-        print msg1
-        msg2 = hex(int("4a", 16) ^ int("f5", 16))
-        msg2 = hex(int(msg2, 16) ^ int(magic2))
-        message = msg1 + msg2 + wut
+while magic1 < 255 and (not stop):
+    while magic2 < 255 and (not stop):
+        n+=1
+        print n
+        message = hex(magic1) + hex(magic2)
         message = padhexa(message)
-        print "message: "
+        message = message + pwd1 + pwd2
+        message = padhexa(message)
         print message
         chiper = (iv + cipher.encrypt(message)).encode("hex")
-        print "chiper: "
         print chiper
         s.sendall(chiper)
         data = s.recv(1024)
         print repr(data)
         if repr(data) == "'MAC VARIFICATION FAILED'":
+            found1 = magic1
             print "magic1:"
             print magic1
+            found2 = magic2
             print "magic2:"
             print magic2
             stop = True
         magic2 += 1
+    magic2 = 0
     magic1 += 1
 
-pwd1 = hex(int(magic1) ^ int("ba", 16))
-print "resz1: " +pwd1
-pwd2 = hex(int(magic2) ^ int("be", 16))
-print "resz2: " + pwd2
-pwd1 = hex(int(pwd1, 16) ^ int("84", 16))
-pwd2 = hex(int(pwd2, 16) ^ int("f5", 16))
-print "elso: " + pwd1
-print "masodik: " + pwd2
+p1 = hex(int(found1) ^ int("84", 16))
+p2 = hex(int(found2) ^ int("f5", 16))
+p1 = hex(int(p1, 16) ^ int("ba", 16))
+p2 = hex(int(p2, 16) ^ int("be", 16))
+print "elso: " + p1
+print "masodik: " + p2
 
-origin1 = hex(int("84", 16) ^ int("ba", 16))
-origin2 = hex(int("f5", 16) ^ int("be", 16))
-print "should have1: " + origin1
-print "should have2: " + origin2
-origin11 = (int(origin1, 16) ^ int("75", 16))
-origin22 = (int(origin2, 16) ^ int("6e", 16))
-print "R1 should have: "
-print origin11
-print "R2 should have: "
-print origin22
-origin111 = (int(origin1, 16) ^ int("55", 16))
-origin222 = (int(origin2, 16) ^ int("4e", 16))
-print "or R1 should have: "
-print origin111
-print "or R2 should have: "
-print origin222
+p= hex(int("84", 16) ^ int("75", 16))
+print (int(p, 16) ^ int(found1))
+
 s.close()
